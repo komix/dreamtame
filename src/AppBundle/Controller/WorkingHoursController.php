@@ -82,7 +82,6 @@ class WorkingHoursController extends FOSRestController
     $token = $this->get('security.token_storage')->getToken();
     $user = $token->getUser();
    
-
     if (empty($name) || empty($institutionId) || empty($workingDays)) {
       $response = new Response();
       $response->setContent(json_encode([
@@ -97,7 +96,6 @@ class WorkingHoursController extends FOSRestController
     }
     
     $institution = $this->getDoctrine()->getRepository('AppBundle:Institution')->find($institutionId);
-    
 
     if ($user->getId() !== $institution->getOwner()) {
       $response = new Response();
@@ -111,6 +109,7 @@ class WorkingHoursController extends FOSRestController
 
       return $response;
     }
+
     $data->setName($name);
     $data->setInstitution($institution);
     $em = $this->getDoctrine()->getManager();
@@ -157,7 +156,9 @@ class WorkingHoursController extends FOSRestController
       return $response;
     }
 
-    if ($user->getId() !== $workingHours->getInstitutionId()) {
+    $institution = $workingHours->getInstitution();
+
+    if ($user->getId() !== $institution->getOwner()) {
       $response = new Response();
       $response->setContent(json_encode([
           'error' => true,
