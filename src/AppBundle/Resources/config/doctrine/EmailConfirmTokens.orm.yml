@@ -1,0 +1,18 @@
+AppBundle\Entity\EmailConfirmTokens:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\EmailConfirmTokensRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        userId:
+            type: integer
+            unique: true
+        token:
+            type: string
+            length: '200'
+    lifecycleCallbacks: {  }

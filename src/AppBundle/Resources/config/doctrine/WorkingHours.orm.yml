@@ -1,0 +1,30 @@
+AppBundle\Entity\WorkingHours:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\WorkingHoursRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: '200'
+        institutionId:
+            type: integer
+    oneToMany:
+        workingDays:
+            targetEntity: WorkingDays
+            mappedBy: workingHours
+            cascade: ["persist"]
+    manyToOne:
+        institution:
+            targetEntity: Institution
+            inversedBy: workingTime
+            cascade: ["persist"]
+            joinColumn:
+                name: institution_id
+                referencedColumnName: id
+    lifecycleCallbacks: {  }

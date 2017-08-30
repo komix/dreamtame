@@ -1,0 +1,31 @@
+AppBundle\Entity\Video:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\VideoRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        imgUrl:
+            type: string
+            length: '200'
+        ytbUrl:
+            type: string
+            length: '200'
+            nullable: true
+        ytbId:
+            type: string
+            length: '200'
+            nullable: true
+        instance:
+            type: string
+            length: '30'
+        instanceId:
+            type: integer
+        createdAt:
+            type: datetime
+            nullable: true
+    lifecycleCallbacks: {  }

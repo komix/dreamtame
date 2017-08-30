@@ -1,0 +1,40 @@
+AppBundle\Entity\Photo:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\PhotoRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        src:
+            type: string
+            length: '200'
+            unique: true
+        msrc:
+            type: string
+            length: '200'
+            unique: true
+        w:
+            type: integer
+        h:
+            type: integer
+        priority:
+            type: integer
+            nullable: true
+        instId:
+            type: integer
+            nullable: true
+        usrId:
+            type: integer
+            nullable: true
+        sqr:
+            type: string
+            length: '200'
+            nullable: true
+        createdAt:
+            type: datetime
+            nullable: true
+    lifecycleCallbacks: {  }

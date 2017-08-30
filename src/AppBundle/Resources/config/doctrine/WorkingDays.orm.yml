@@ -1,0 +1,26 @@
+AppBundle\Entity\WorkingDays:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\WorkingDaysRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        dayNumber:
+            type: integer
+        start:
+            type: datetime
+        end:
+            type: datetime
+    manyToOne:
+        workingHours:
+            targetEntity: WorkingHours
+            inversedBy: workingDays
+            cascade: ["persist"]
+            joinColumn:
+                name: working_hours_id
+                referencedColumnName: id    
+    lifecycleCallbacks: {  }

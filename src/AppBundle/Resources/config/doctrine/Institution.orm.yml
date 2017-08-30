@@ -1,0 +1,43 @@
+AppBundle\Entity\Institution:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\InstitutionRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        title:
+            type: string
+            length: 255
+            nullable: true
+        description:
+            type: text
+            nullable: true
+            length: 65535
+        photoId:
+            type: integer
+            nullable: true
+        owner:
+            type: integer
+        address:
+            type: text
+            nullable: true
+        isActivated:
+            type: integer
+            nullable: true
+        lat:
+            type: float
+            nullable: true
+        lng:
+            type: float
+        categoryId:
+            type: integer
+            nullable: true
+    oneToMany:
+        workingTime:
+            targetEntity: WorkingHours
+            mappedBy: institution
+    lifecycleCallbacks: {  }
