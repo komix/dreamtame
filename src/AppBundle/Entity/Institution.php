@@ -3,6 +3,7 @@
 namespace AppBundle\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use AppBundle\Entity\WorkingHours;
+use Doctrine\Common\Collections\ArrayCollection;
 
 /**
  * Institution

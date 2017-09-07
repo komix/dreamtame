@@ -78,6 +78,7 @@ class WorkingHoursController extends FOSRestController
     $name = $request->get('name');
     $workingDays = $request->get('workingDays');
     $institutionId = $request->get('institutionId');
+    $isDefaultSchedule = $request->get('isDefaultSchedule');
     
     $token = $this->get('security.token_storage')->getToken();
     $user = $token->getUser();
@@ -112,6 +113,8 @@ class WorkingHoursController extends FOSRestController
 
     $data->setName($name);
     $data->setInstitution($institution);
+    $data->setIsDefaultSchedule($isDefaultSchedule);
+
     $em = $this->getDoctrine()->getManager();
     $em->persist($data);
 
@@ -188,6 +191,7 @@ class WorkingHoursController extends FOSRestController
         $workingHours->addWorkingDay($workingDay);
     }
 
+    $workingHours->setName($name);
     
     $em->persist($workingHours);
     $em->flush();
@@ -215,22 +219,39 @@ class WorkingHoursController extends FOSRestController
       $response->headers->set('Content-Type', 'application/json');
 
       return $response;
-  } else {
-    $workingDays = $workingHours->getWorkingDays();
+  } 
 
-    foreach ($workingDays as $day) {
-      $workingHours->removeWorkingDay($day);
-      $sn->remove($day);
-    }
+  $token = $this->get('security.token_storage')->getToken();
+  $user = $token->getUser();
 
-    $sn->remove($workingHours);
+  $institution = $workingHours->getInstitution();
 
+  if ($user->getId() !== $institution->getOwner()) {
+    $response = new Response();
+    $response->setContent(json_encode([
+        'error' => true,
+        'code' => 401,
+        'message' => "Unathorized"
+    ]));
+    $response->setStatusCode(401);
+    $response->headers->set('Content-Type', 'application/json');
 
-
-    $sn->flush();
-
-    return $workingHours; 
+    return $response;
   }
+
+  $workingDays = $workingHours->getWorkingDays();
+
+  foreach ($workingDays as $day) {
+    $workingHours->removeWorkingDay($day);
+    $sn->remove($day);
+  }
+
+  $sn->remove($workingHours);
+
+  $sn->flush();
+
+  return $workingHours; 
+  
   return new View("deleted successfully", Response::HTTP_OK);
  }
 

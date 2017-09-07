@@ -31,6 +31,11 @@ class WorkingHours
      */
     private $workingDays;
 
+    /**
+     * @var boolean
+     */
+    private $isDefaultSchedule;
+
     public function __construct()
     {
         $this->workingDays = new ArrayCollection();
@@ -155,5 +160,29 @@ class WorkingHours
     public function getInstitutionId()
     {
         return $this->institutionId;
+    }
+
+    /**
+     * Set isDefaultSchedule
+     *
+     * @param boolean $isDefaultSchedule
+     *
+     * @return WorkingHours
+     */
+    public function setIsDefaultSchedule($isDefaultSchedule)
+    {
+        $this->isDefaultSchedule = $isDefaultSchedule;
+
+        return $this;
+    }
+
+    /**
+     * Get isDefaultSchedule
+     *
+     * @return boolean
+     */
+    public function getIsDefaultSchedule()
+    {
+        return $this->isDefaultSchedule;
     }
 }
