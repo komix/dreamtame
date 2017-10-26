@@ -1,0 +1,39 @@
+AppBundle\Entity\Article:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\ArticleRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        text:
+            type: text
+            nullable: true
+            length: 65535
+        snippet:
+            type: text
+            nullable: true
+            length: 65535
+        title:
+            type: string
+            length: '200'
+        imgUrl:
+            type: string
+            length: '200'
+            nullable: true
+        userId:
+            type: integer
+            nullable: false
+        createdAt:
+            type: datetime
+    manyToOne:
+        author:
+          targetEntity: User
+          cascade: ["persist"]
+          joinColumn:
+            name: user_id
+            referencedColumnName: id
+    lifecycleCallbacks: {  }

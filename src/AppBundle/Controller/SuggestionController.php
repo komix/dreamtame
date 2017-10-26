@@ -9,92 +9,42 @@ use FOS\RestBundle\Controller\FOSRestController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use FOS\RestBundle\View\View;
-use AppBundle\Entity\Category;
+use AppBundle\Entity\Suggestion;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
 
-class CategoryController extends FOSRestController
+class SuggestionController extends FOSRestController
 {
+
   /**
-    * @Rest\Get("/categories/get-tree")
-    */
-  public function getTree()
+  * @Rest\Get("/suggestions")
+  */
+  public function getAction()
   {
-    $categories = $this->getDoctrine()->getRepository('AppBundle:Category')->findAll();
+    $suggestions = $this->getDoctrine()->getRepository('AppBundle:Suggestion')->findAll();
 
-    function getSourceCategory($categoriesList) {
-      for ($i = 0; $i < count($categoriesList); $i++) {
-        if ($categoriesList[$i]->getParent() === 0) {
-          return $categoriesList[$i];
-        }
-      }
-    }
-
-    function getCategoryChildren($category, $allCategories) {
-      $children = array();
-
-      for ($i = 0; $i < count($allCategories); $i++) {
-        if ($allCategories[$i]->getParent() === $category->getId()) {
-          array_push($children, $allCategories[$i]);
-        }
-      }
-
-      if (count($children) > 0) {
-        return $children;
-      } else {
-        return false;
-      }
-    }
-
-    function formTree($categoriesList, $allCategories) {
-      for ($i = 0; $i < count($categoriesList); $i++) {
-        $children = getCategoryChildren($categoriesList[$i], $allCategories);
-        
-        if ($children) {
-          $categoriesList[$i]->setChildren($children);
-          formTree($children, $allCategories);
-        }
-      }
-
-      return $categoriesList;
-    }
-
-    if ($categories === null) {
-      $response = new Response();
-      $response->setContent(json_encode([
-          'error' => true,
-          'code' => 404,
-          'message' => "User Not Found."
-      ]));
-      $response->setStatusCode(400);
-      $response->headers->set('Content-Type', 'application/json');
-      return $response;
+    if (empty($suggestions)) {
+      return array();
     } else {
-      $sourceCat = getSourceCategory($categories);
-      $baseCategories = getCategoryChildren($sourceCat, $categories);
-      $tree = formTree($baseCategories, $categories);
-
-      return $tree;
+      return $suggestions;
     }
     
   }
 
-
   /**
-	* @Rest\Get("/categories/{id}")
+	* @Rest\Get("/suggestions/{id}")
 	*/
 	public function idAction($id)
 	{
-		$singleresult = $this->getDoctrine()->getRepository('AppBundle:Category')->find($id);
+		$singleresult = $this->getDoctrine()->getRepository('AppBundle:Suggestion')->find($id);
 		if ($singleresult === null) {
-			return new View("user not found", Response::HTTP_NOT_FOUND);
+			return new View("suggestion not found", Response::HTTP_NOT_FOUND);
 		}
 		return $singleresult;
 	}
 
-
 /**
- * @Rest\Post("/api/categories")
+ * @Rest\Post("/api/suggestions")
  */
   public function postAction(Request $request) 
   {
@@ -115,15 +65,16 @@ class CategoryController extends FOSRestController
       return $response;
     }
 
+    $suggestion = new Suggestion;
 
-    $category = new Category;
     $name = $request->get('name');
-    $parent = $request->get('parent');
-    $ukName = $request->get('ukName');
+    $imgUrl = $request->get('imgUrl');
+    $url = $request->get('url');
+    $isActive = $request->get('isActive');
 
     $response = new Response();
 
-    if (empty($name) || empty($parent) || empty($ukName)) {
+    if (empty($name) || empty($imgUrl) || empty($url)) {
       $response
         ->setContent(json_encode([
           'error' => true,
@@ -136,19 +87,25 @@ class CategoryController extends FOSRestController
       return $response;
     }
 
-    $category->setName($name);
-    $category->setParent($parent);
-    $category->setUkName($ukName);
+    $suggestion->setName($name);
+    $suggestion->setImgUrl($imgUrl);
+    $suggestion->setUrl($url);
+
+    if (!empty($isActive)) {
+      $suggestion->setIsActive($isActive);
+    }
+    
 
     $em = $this->getDoctrine()->getManager();
-    $em->persist($category);
+    $em->persist($suggestion);
     $em->flush();
 
     $response
       ->setContent(json_encode([
           'success' => true,
           'code' => 200,
-          'message' => "Category was created successfully!"
+          'message' => "Suggestion was created successfully!",
+          'id' => $suggestion->getId()
         ]));
     $response->setStatusCode(200);
     $response->headers->set('Content-Type', 'application/json');
@@ -158,37 +115,39 @@ class CategoryController extends FOSRestController
 
 
    /**
-   * @Rest\Put("/api/categories/{id}")
+   * @Rest\Put("/api/suggestions/{id}")
    */
    public function updateAction($id,Request $request) { 
+      $token = $this->get('security.token_storage')->getToken();
+      $user = $token->getUser();
 
-    $token = $this->get('security.token_storage')->getToken();
-    $user = $token->getUser();
+      if (!$user->hasRole('ROLE_ADMIN')) {
+        $response = new Response();
+        $response->setContent(json_encode([
+            'error' => true,
+            'code' => 401,
+            'message' => "No permission."
+        ]));
+        $response->setStatusCode(401);
+        $response->headers->set('Content-Type', 'application/json');
 
-    if (!$user->hasRole('ROLE_ADMIN')) {
-      $response = new Response();
-      $response->setContent(json_encode([
-          'error' => true,
-          'code' => 401,
-          'message' => "No permission."
-      ]));
-      $response->setStatusCode(401);
-      $response->headers->set('Content-Type', 'application/json');
+        return $response;
+      }
 
-      return $response;
-    }
 
-    $category = new Category;
+    $suggestion = new Suggestion;
     $name = $request->get('name');
-    $parent = $request->get('parent');
-    $ukName = $request->get('ukName');
+    $imgUrl = $request->get('imgUrl');
+    $url = $request->get('url');
+  
+    $isActive = $request->get('isActive');
 
     $response = new Response();
 
     $sn = $this->getDoctrine()->getManager();
-    $category = $this->getDoctrine()->getRepository('AppBundle:Category')->find($id);
+    $suggestion = $this->getDoctrine()->getRepository('AppBundle:Suggestion')->find($id);
 
-    if (empty($name) || empty($parent) || empty($ukName))  {
+    if (empty($name) || empty($imgUrl))  {
       $response
         ->setContent(json_encode([
           'error' => true,
@@ -200,9 +159,14 @@ class CategoryController extends FOSRestController
      
       return $response;
     } else {
-      $category->setName($name);
-      $category->setParent($parent);
-      $category->setUkName($ukName);
+
+      $suggestion->setName($name);
+      $suggestion->setImgUrl($imgUrl);
+      $suggestion->setUrl($url);
+      
+      if (!empty($isActive)) {
+        $suggestion->setIsActive($isActive);
+      }
 
       $sn->flush();
     
@@ -210,7 +174,7 @@ class CategoryController extends FOSRestController
       ->setContent(json_encode([
           'success' => true,
           'code' => 200,
-          'message' => "Category was edited successfully!"
+          'message' => "Suggestion was updated successfully!"
         ]));
       $response->setStatusCode(200);
       $response->headers->set('Content-Type', 'application/json');
@@ -221,7 +185,7 @@ class CategoryController extends FOSRestController
   }
 
   /**
-  * @Rest\Delete("/api/categories/{id}")
+  * @Rest\Delete("/api/suggestions/{id}")
   */
   public function deleteAction($id)
     {
@@ -241,30 +205,30 @@ class CategoryController extends FOSRestController
         return $response;
       }
 
-      $category = new Category;
+      $category = new Suggestion;
       $sn = $this->getDoctrine()->getManager();
-      $category = $this->getDoctrine()->getRepository('AppBundle:Category')->find($id);
+      $category = $this->getDoctrine()->getRepository('AppBundle:Suggestion')->find($id);
       $response = new Response();
 
-      if (empty($category)) {
+      if (empty($suggestion)) {
         $response->setContent(json_encode([
             'error' => true,
             'code' => 404,
-            'message' => "User Not Found."
+            'message' => "Suggestion Not Found."
         ]));
         $response->setStatusCode(400);
         $response->headers->set('Content-Type', 'application/json');
 
         return $response;
       } else {
-        $sn->remove($category);
+        $sn->remove($suggestion);
         $sn->flush();
 
         $response
         ->setContent(json_encode([
             'success' => true,
             'code' => 200,
-            'message' => "Category was deleted successfully!"
+            'message' => "Suggestion was deleted successfully!"
           ]));
         $response->setStatusCode(200);
         $response->headers->set('Content-Type', 'application/json');

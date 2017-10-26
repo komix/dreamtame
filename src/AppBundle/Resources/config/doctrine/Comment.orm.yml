@@ -1,0 +1,58 @@
+AppBundle\Entity\Comment:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\CommentRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        text:
+            type: text
+        institutionId:
+            type: integer
+            nullable: true
+        articleId:
+            type: integer
+            nullable: true
+        createdAt:
+            type: datetime
+        commentId:
+            type: integer
+            nullable: true
+    oneToMany:
+        answers:
+            targetEntity: Comment
+            mappedBy: original
+    manyToOne:
+        original:
+            targetEntity: Comment
+            inversedBy: answers
+            cascade: ["persist"]
+            joinColumn:
+                name: comment_id
+                referencedColumnName: id
+        institution:
+            targetEntity: Institution
+            inversedBy: comments
+            cascade: ["persist"]
+            joinColumn:
+                name: institution_id
+                referencedColumnName: id
+        article:
+            targetEntity: Article
+            inversedBy: comments
+            cascade: ["persist"]
+            joinColumn:
+                name: article_id
+                referencedColumnName: id
+        author:
+            targetEntity: User
+            inversedBy: comments
+            cascade: ["persist"]
+            joinColumn:
+                name: user_id
+                referencedColumnName: id
+    lifecycleCallbacks: {  }

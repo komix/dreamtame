@@ -65,9 +65,25 @@ class Institution
      */
     private $workingTime;
 
+    /**
+     * @ORM\OneToMany(targetEntity="PhoneNumber", mappedBy="institution")
+     */
+    private $phoneNumbers;
+
+    /**
+     * @var integer
+     */
+    private $recruitFrom;
+
+    /**
+     * @var integer
+     */
+    private $recruitTo;
+
     public function __construct()
     {
         $this->workingTime = new ArrayCollection();
+        $this->phoneNumbers = new ArrayCollection();
     }
 
 
@@ -364,5 +380,116 @@ class Institution
     public function getWorkingTime()
     {
         return $this->workingTime;
+    }
+
+    /**
+     * Set recruitFrom
+     *
+     * @param integer $recruitFrom
+     *
+     * @return Institution
+     */
+    public function setRecruitFrom($recruitFrom)
+    {
+        $this->recruitFrom = $recruitFrom;
+
+        return $this;
+    }
+
+    /**
+     * Get recruitFrom
+     *
+     * @return integer
+     */
+    public function getRecruitFrom()
+    {
+        return $this->recruitFrom;
+    }
+
+    /**
+     * Set recruitTo
+     *
+     * @param integer $recruitTo
+     *
+     * @return Institution
+     */
+    public function setRecruitTo($recruitTo)
+    {
+        $this->recruitTo = $recruitTo;
+
+        return $this;
+    }
+
+    /**
+     * Get recruitTo
+     *
+     * @return integer
+     */
+    public function getRecruitTo()
+    {
+        return $this->recruitTo;
+    }
+
+    /**
+     * Add phoneNumber
+     *
+     * @param \AppBundle\Entity\PhoneNumber $phoneNumber
+     *
+     * @return Institution
+     */
+    public function addPhoneNumber(\AppBundle\Entity\PhoneNumber $phoneNumber)
+    {
+        $this->phoneNumbers[] = $phoneNumber;
+
+        return $this;
+    }
+
+    /**
+     * Remove phoneNumber
+     *
+     * @param \AppBundle\Entity\PhoneNumber $phoneNumber
+     */
+    public function removePhoneNumber(\AppBundle\Entity\PhoneNumber $phoneNumber)
+    {
+        $this->phoneNumbers->removeElement($phoneNumber);
+    }
+
+    /**
+     * Get phoneNumbers
+     *
+     * @return \Doctrine\Common\Collections\Collection
+     */
+    public function getPhoneNumbers()
+    {
+        return $this->phoneNumbers;
+    }
+    /**
+     * @var string
+     */
+    private $imgUrl;
+
+
+    /**
+     * Set imgUrl
+     *
+     * @param string $imgUrl
+     *
+     * @return Institution
+     */
+    public function setImgUrl($imgUrl)
+    {
+        $this->imgUrl = $imgUrl;
+
+        return $this;
+    }
+
+    /**
+     * Get imgUrl
+     *
+     * @return string
+     */
+    public function getImgUrl()
+    {
+        return $this->imgUrl;
     }
 }

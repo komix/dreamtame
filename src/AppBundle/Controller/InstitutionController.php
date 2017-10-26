@@ -32,13 +32,29 @@ class InstitutionController extends FOSRestController
   }
 
   /**
-  * @Rest\Get("/institutions/category/{id}")
+  * @Rest\Post("/institutions/category/{id}")
   */
-  public function getByCategoryIdAction($id)
+  public function getByCategoryIdAction($id, Request $request)
   {
+    $offset = $request->get('offset');
+    $limit = $request->get('limit');
+
+    if (empty($offset)) {
+      $offset = 0;
+    }
+
+    if (empty($limit)) {
+      $limit = 1000;
+    }
+
     $results = $this->getDoctrine()
       ->getRepository('AppBundle:Institution')
-      ->findBy(array('categoryId' => intval($id)));
+      ->findBy(
+        array('categoryId' => intval($id)),
+        array('id' => 'DESC'),
+        $limit,
+        $offset 
+        );
 
     if (empty($results)) {
       return array();
@@ -88,6 +104,34 @@ class InstitutionController extends FOSRestController
 	}
 
 
+  /**
+   * @Rest\Post("/institutions/last")
+   */
+  public function getLastAction(Request $request)
+  {
+    $limit = $request->get('limit');
+    $idsList = $request->get('idsList');
+
+    if (empty($limit)) {
+      $limit = 5;
+    }
+
+    $results = $this->getDoctrine()
+      ->getRepository('AppBundle:Institution')
+      ->findBy(
+        array('categoryId' => $idsList),
+        array('id' => 'DESC'),
+        $limit
+        );
+
+    if (empty($results)) {
+      return array();
+    } else {
+      return $results;
+    }
+  }
+
+
 /**
  * @Rest\Post("/api/institutions")
  */
@@ -133,6 +177,16 @@ class InstitutionController extends FOSRestController
 
     if (!empty($photoId)) {
       $institution->setPhotoId($photoId);
+
+      $photo = $this->getDoctrine()->getRepository('AppBundle:Photo')->find($photoId);
+
+      if ($photo->getSqr()) {
+        $photoUrl = $photo->getSqr();
+      } else {
+        $photoUrl = $photo->getMsrc();
+      }
+
+      $institution->setImgUrl($photoUrl);
     }
 
     if (!empty($lat) && !empty($lng)) {
@@ -218,6 +272,15 @@ class InstitutionController extends FOSRestController
 
     if (!empty($photoId)) {
       $institution->setPhotoId($photoId);
+      $photo = $this->getDoctrine()->getRepository('AppBundle:Photo')->find($photoId);
+
+      if ($photo->getSqr()) {
+        $photoUrl = $photo->getSqr();
+      } else {
+        $photoUrl = $photo->getMsrc();
+      }
+
+      $institution->setImgUrl($photoUrl);
     }
 
     if (!empty($address)) {
@@ -275,5 +338,155 @@ class InstitutionController extends FOSRestController
       }
     }
 
+
+  /**
+   * @Rest\Post("/api/institutions/{id}/recruit-age")
+   */
+  public function addRecruitAge($id, Request $request)
+  {
+    $token = $this->get('security.token_storage')->getToken();
+    $user = $token->getUser();
+    $institution = $this->getDoctrine()->getRepository('AppBundle:Institution')->find($id);
+
+    $recruitFrom = $request->get('recruitFrom');
+    $recruitTo = $request->get('recruitTo');
+
+    if (empty($institution)) {
+      $response = new Response();
+      $response->setContent(json_encode([
+          'error' => true,
+          'code' => 404,
+          'message' => "User Not Found."
+      ]));
+      $response->setStatusCode(400);
+      $response->headers->set('Content-Type', 'application/json');
+
+      return $response;
+    }
+
+    if (($user->getId() !== $institution->getOwner()) && !$user->hasRole('ROLE_ADMIN')) {
+      $response = new Response();
+      $response->setContent(json_encode([
+          'error' => true,
+          'code' => 401,
+          'message' => "No permission."
+      ]));
+      $response->setStatusCode(401);
+      $response->headers->set('Content-Type', 'application/json');
+
+      return $response;
+    }
+
+    if (empty($recruitFrom) || empty($recruitTo)) {
+      $response = new Response();
+      $response->setContent(json_encode([
+          'error' => true,
+          'code' => 400,
+          'message' => "Bad request."
+      ]));
+      $response->setStatusCode(401);
+      $response->headers->set('Content-Type', 'application/json');
+    }
+
+    $institution->setRecruitFrom($recruitFrom);
+    $institution->setRecruitTo($recruitTo);
+
+    $sn = $this->getDoctrine()->getManager();
+    $sn->flush();
+
+    $response = new Response();
+    $response->setContent(json_encode([
+        'success' => true,
+        'code' => 200,
+        'message' => "Recruit age updated successfully."
+    ]));
+    $response->setStatusCode(200);
+    $response->headers->set('Content-Type', 'application/json');
+
+    return $response;
+  }
+
+  /**
+  * @Rest\Post("/institutions-search")
+  */
+  public function search(Request $request)
+  {
+
+    $point = $request->get('point');
+    $radius = $request->get('radius');
+    $limit = $request->get('limit');
+    $offset = $request->get('offset');
+    $categoriesIds = $request->get('categoriesIds');
+
+    if (empty($point)) {
+      $response = new Response();
+      $response->setContent(json_encode([
+          'error' => true,
+          'code' => 400,
+          'message' => "Bad request."
+      ]));
+      $response->setStatusCode(400);
+      $response->headers->set('Content-Type', 'application/json');
+      return $response;
+    }
+
+    if (empty($offset)) {
+      $offset = 0;
+    }
+
+    if (empty($limit)) {
+      $limit = 0;
+    }
+
+    $r_earth = 6378;
+    $pi = pi();
+    $fromLat  = $point['lat'] - ($radius / $r_earth) * (180 / $pi);
+    $toLat  = $point['lat'] + ($radius / $r_earth) * (180 / $pi);
+    $fromLng = $point['lng'] - ($radius / $r_earth) * (180 / $pi) / cos($point['lat'] * $pi/180);
+    $toLng = $point['lng'] + ($radius / $r_earth) * (180 / $pi) / cos($point['lat'] * $pi/180);
+
+    $em = $this->getDoctrine()->getManager();
+    $qb = $em->createQueryBuilder();
+
+    if (empty($categoriesIds)) {
+       $q = $qb->select(array('i'))
+           ->from('AppBundle:Institution', 'i')
+           ->where(
+             $qb->expr()->lt('i.lat', $toLat),
+             $qb->expr()->gt('i.lat', $fromLat),
+             $qb->expr()->lt('i.lng', $toLng),
+             $qb->expr()->gt('i.lng', $fromLng)
+           )
+           ->orderBy('i.id', 'ASC')
+           ->setMaxResults($limit)
+           ->setFirstResult($offset)
+           ->getQuery();
+    } else {
+      $q = $qb->select(array('i'))
+           ->from('AppBundle:Institution', 'i')
+           ->where(
+             $qb->expr()->lt('i.lat', $toLat),
+             $qb->expr()->gt('i.lat', $fromLat),
+             $qb->expr()->lt('i.lng', $toLng),
+             $qb->expr()->gt('i.lng', $fromLng)
+           )
+           ->andWhere("i.categoryId IN(:categoriesIds)")
+           ->setParameter('categoriesIds', $categoriesIds)
+           ->orderBy('i.id', 'ASC')
+           ->setMaxResults($limit)
+           ->setFirstResult($offset)
+           ->getQuery();
+    }
+
+    
+
+    $institutions = $q->getResult();
+
+    if (empty($institutions)) {
+      return array();
+    } else {
+      return $institutions;
+    }
+  }
 
 }

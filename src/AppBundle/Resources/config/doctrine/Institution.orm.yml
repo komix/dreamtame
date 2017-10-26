@@ -11,7 +11,7 @@ AppBundle\Entity\Institution:
     fields:
         title:
             type: string
-            length: 255
+            length: 200
             nullable: true
         description:
             type: text
@@ -19,6 +19,10 @@ AppBundle\Entity\Institution:
             length: 65535
         photoId:
             type: integer
+            nullable: true
+        imgUrl:
+            type: string
+            length: 200
             nullable: true
         owner:
             type: integer
@@ -36,8 +40,17 @@ AppBundle\Entity\Institution:
         categoryId:
             type: integer
             nullable: true
+        recruitFrom:
+            type: integer
+            nullable: true
+        recruitTo:
+            type: integer
+            nullable: true
     oneToMany:
         workingTime:
             targetEntity: WorkingHours
+            mappedBy: institution
+        phoneNumbers:
+            targetEntity: PhoneNumber
             mappedBy: institution
     lifecycleCallbacks: {  }

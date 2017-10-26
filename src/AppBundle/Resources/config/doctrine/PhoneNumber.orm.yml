@@ -1,0 +1,23 @@
+AppBundle\Entity\PhoneNumber:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\PhoneNumberRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        rawNumber:
+            type: string
+            length: '100'
+    manyToOne:
+        institution:
+            targetEntity: Institution
+            inversedBy: phoneNumbers
+            cascade: ["persist"]
+            joinColumn:
+                name: institution_id
+                referencedColumnName: id
+    lifecycleCallbacks: {  }

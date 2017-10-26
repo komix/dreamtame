@@ -54,6 +54,7 @@ class UserController extends FOSRestController
       $user->lastName = $singleresult->getLastName();
       $user->photoId = $singleresult->getPhotoId();
       $user->email = $singleresult->getEmail();
+      $user->smallPhotoUrl = $singleresult->getSmallPhotoUrl();
 
       $response->setContent(json_encode([
           'success' => true,
@@ -268,6 +269,15 @@ class UserController extends FOSRestController
 
   if (!empty($photoId)) {
     $user->setPhotoId($photoId);
+    $photo = $this->getDoctrine()->getRepository('AppBundle:Photo')->find($photoId);
+
+    if ($photo->getSqr()) {
+      $photoUrl = $photo->getSqr();
+    } else {
+      $photoUrl = $photo->getMsrc();
+    }
+
+    $user->setSmallPhotoUrl($photoUrl);
   }
 
   $sn->flush();

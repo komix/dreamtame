@@ -40,10 +40,21 @@ class VideoController extends FOSRestController
 
 
   /**
-  * @Rest\Get("/videos/institution/{id}")
+  * @Rest\Post("/videos/institution/{id}")
   */
-  public function getByInstIdAction($id)
+  public function getByInstIdAction($id, Request $request)
   {
+
+    $offset = $request->get('offset');
+    $limit = $request->get('limit');
+
+    if (empty($offset)) {
+      $offset = 0;
+    }
+
+    if (empty($limit)) {
+      $limit = 1000;
+    }
 
     $results = $this->getDoctrine()
       ->getRepository('AppBundle:Video')
@@ -52,7 +63,9 @@ class VideoController extends FOSRestController
           'instance' => 'institution',
           'instanceId' => intval($id)
           ),
-        array('id' => 'DESC')
+        array('id' => 'DESC'),
+        $limit,
+        $offset
         );
     
     if ($results === null) {

@@ -6,7 +6,6 @@ AppBundle\Entity\User:
             type: integer
             generator:
                 strategy: AUTO
-
     fields:
         firstName:
             type: string
@@ -18,5 +17,9 @@ AppBundle\Entity\User:
             nullable: true
         photoId:
             type: integer
+            nullable: true
+        smallPhotoUrl:
+            type: string
+            length: 200
             nullable: true
     lifecycleCallbacks: {  }

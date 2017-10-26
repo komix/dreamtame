@@ -39,6 +39,11 @@ class User extends BaseUser
      */
     private $photoId;
 
+    /**
+     * @var string
+     */
+    private $smallPhotoUrl;
+
     public function setEmail($email){
         parent::setEmail($email);
         parent::setUsername($email);
@@ -114,5 +119,29 @@ class User extends BaseUser
     public function getPhotoId()
     {
         return $this->photoId;
+    }
+
+    /**
+     * Set smallPhotoUrl
+     *
+     * @param string $smallPhotoUrl
+     *
+     * @return User
+     */
+    public function setSmallPhotoUrl($smallPhotoUrl)
+    {
+        $this->smallPhotoUrl = $smallPhotoUrl;
+
+        return $this;
+    }
+
+    /**
+     * Get smallPhotoUrl
+     *
+     * @return string
+     */
+    public function getSmallPhotoUrl()
+    {
+        return $this->smallPhotoUrl;
     }
 }
