@@ -1,0 +1,23 @@
+AppBundle\Entity\Location:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\LocationRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: '200'
+        lat:
+            type: float
+        lng:
+            type: float
+    oneToMany:
+        areas:
+            targetEntity: Area
+            mappedBy: location
+    lifecycleCallbacks: {  }

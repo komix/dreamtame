@@ -9,61 +9,32 @@ use FOS\RestBundle\Controller\FOSRestController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use FOS\RestBundle\View\View;
-use AppBundle\Entity\Institution;
+use AppBundle\Entity\Location;
 use AppBundle\Entity\User;
-use AppBundle\Entity\Article;
 
-class ArticleController extends FOSRestController
+class LocationController extends FOSRestController
 {
 
   /**
-  * @Rest\Post("/news")
+  * @Rest\Get("/")
   */
-  public function getAction(Request $request)
+  public function getAction()
   {
-    $offset = $request->get('offset');
-    $limit = $request->get('limit');
+    $locations = $this->getDoctrine()->getRepository('AppBundle:Location')->findAll();
 
-    if (empty($offset)) {
-      $offset = 0;
-    }
-
-    if (empty($limit)) {
-      $limit = 1000;
-    }
-
-    $results = $this->getDoctrine()
-      ->getRepository('AppBundle:Article')
-      ->findBy(
-        array(),
-        array('id' => 'DESC'),
-        $limit,
-        $offset 
-        );
-    
-    if ($results === null) {
-      $response = new Response();
-      $response->setContent(json_encode([
-          'error' => true,
-          'code' => 404,
-          'message' => "Comments Not Found."
-      ]));
-      $response->setStatusCode(400);
-      $response->headers->set('Content-Type', 'application/json');
-
-      return $response;
-    }
-
-    return $results;
-    
+    if (empty($locations)) {
+      return array();
+    } else {
+      return $locations;
+    } 
   }
 
   /**
-   * @Rest\Get("/news/{id}")
+   * @Rest\Get("/locations/{id}")
    */
   public function idAction($id)
   {
-    $singleresult = $this->getDoctrine()->getRepository('AppBundle:Article')->find($id);
+    $singleresult = $this->getDoctrine()->getRepository('AppBundle:Location')->find($id);
 
     if (empty($singleresult)) {
       $response = new Response();
@@ -80,48 +51,16 @@ class ArticleController extends FOSRestController
     return $singleresult;
   }
 
-  /**
-   * @Rest\Post("/news/last-n")
-   */
-  public function getLastNInstances(Request $request)
-  {
-    $limit = $request->get('limit');
-
-    if (empty($limit)) {
-      $limit = 5;
-    }
-
-    $em = $this->getDoctrine()->getManager();
-    $qb = $em->createQueryBuilder();
-
-    $q = $qb->select(array('a'))
-         ->from('AppBundle:Article', 'a')
-         ->where('a.imgUrl IS NOT NULL')
-         ->orderBy('a.id', 'DESC')
-         ->setMaxResults($limit)
-         ->getQuery();
-
-    $news = $q->getResult();
-
-    if (empty($news)) {
-      return array();
-    } else {
-      return $news;
-    }
-  }
-
  /**
- * @Rest\Post("/api/news")
+ * @Rest\Post("/api/locations")
  */
   public function postAction(Request $request) 
   {
-    $article = new Article;
+    $location = new Location;
 
-    $title = $request->get('title');
-    $snippet = $request->get('snippet');
-    $text = $request->get('text');
-    $imgUrl = $request->get('imgUrl');
-    $createdAt = $request->get('createdAt');
+    $name = $request->get('name');
+    $lat = $request->get('lat');
+    $lng = $request->get('lng');
     
     $response = new Response();
 
@@ -142,7 +81,7 @@ class ArticleController extends FOSRestController
       return $response;
     }
 
-    if (empty($title) || empty($text) || empty($imgUrl)) {
+    if (empty($name) || empty($lat) || empty($lng)) {
       $response
         ->setContent(json_encode([
           'error' => true,
@@ -155,26 +94,20 @@ class ArticleController extends FOSRestController
       return $response;
     }
 
-    if (!empty($createdAt)) {
-      $article->setCreatedAt(new \DateTime($createdAt));
-    }
-
-    $article->setTitle($title);
-    $article->setSnippet($snippet);
-    $article->setText($text);
-    $article->setImgUrl($imgUrl);
-    $article->setAuthor($user);
+    $location->setName($name);
+    $location->setLat($lat);
+    $location->setLng($lng);
 
     $em = $this->getDoctrine()->getManager();
-    $em->persist($article);
+    $em->persist($location);
     $em->flush();
 
     $response
       ->setContent(json_encode([
           'success' => true,
           'code' => 200,
-          'message' => "Article was created successfully!",
-          'articleId' => $article->getId()
+          'message' => "Location was added successfully!",
+          'articleId' => $locaton->getId()
         ]));
     $response->setStatusCode(200);
     $response->headers->set('Content-Type', 'application/json');
@@ -184,14 +117,14 @@ class ArticleController extends FOSRestController
 
 
   /**
-   * @Rest\Put("/api/news/{id}")
+   * @Rest\Put("/api/locations/{id}")
    */
    public function updateAction($id, Request $request) {
     $token = $this->get('security.token_storage')->getToken();
     $user = $token->getUser();
-    $article = $this->getDoctrine()->getRepository('AppBundle:Article')->find($id);
+    $location = $this->getDoctrine()->getRepository('AppBundle:Location')->find($id);
 
-    if (empty($article)) {
+    if (empty($location)) {
       $response = new Response();
       $response->setContent(json_encode([
           'error' => true,
@@ -217,46 +150,36 @@ class ArticleController extends FOSRestController
       return $response;
     }
     
-    $title = $request->get('title');
-    $snippet = $request->get('snippet');
-    $text = $request->get('text');
-    $imgUrl = $request->get('imgUrl');
-    $createdAt = $request->get('createdAt');
+    $name = $request->get('name');
+    $lat = $request->get('lat');
+    $lng = $request->get('lng');
 
-    if (!empty($title)) {
-      $article->setTitle($title);
+    if (!empty($name)) {
+      $location->setName($name);
     }
 
-    if (!empty($snippet)) {
-      $article->setSnippet($snippet);
+    if (!empty($lat)) {
+      $location->setLat($lat);
     }
 
-    if (!empty($text)) {
-      $article->setText($text);
-    }
-
-    if (!empty($imgUrl)) {
-      $article->setImgUrl($imgUrl);
-    }
-
-    if (!empty($createdAt)) {
-      $article->setCreatedAt(new \DateTime($createdAt));
+    if (!empty($lng)) {
+      $location->setLng($lng);
     }
 
     $sn = $this->getDoctrine()->getManager();
     // $sn->persist($article);
     $sn->flush();
 
-    return $article;
+    return $location;
   }
 
   /**
-  * @Rest\Delete("/article/{id}")
+  * @Rest\Delete("/api/locations/{id}")
   */
   public function deleteAction($id)
     {
       $token = $this->get('security.token_storage')->getToken();
-      $user = $token->getUser();  
+      $user = $token->getUser();
 
       if (!$user->hasRole('ROLE_ADMIN')) {
         $response = new Response();
@@ -272,34 +195,35 @@ class ArticleController extends FOSRestController
       }
 
       $sn = $this->getDoctrine()->getManager();
-      $article = $this->getDoctrine()->getRepository('AppBundle:Article')->find($id);
+      $location = $this->getDoctrine()->getRepository('AppBundle:Location')->find($id);
       $response = new Response();
 
-      if (empty($article)) {
+      if (empty($location)) {
         $response->setContent(json_encode([
             'error' => true,
             'code' => 404,
-            'message' => "User Not Found."
+            'message' => "Location Not Found."
         ]));
         $response->setStatusCode(400);
         $response->headers->set('Content-Type', 'application/json');
 
         return $response;
-      } else {
-        $sn->remove($article);
-        $sn->flush();
+      } 
 
-        $response
-        ->setContent(json_encode([
-            'success' => true,
-            'code' => 200,
-            'message' => "Category was deleted successfully!"
-          ]));
-        $response->setStatusCode(200);
-        $response->headers->set('Content-Type', 'application/json');
-       
-        return $response;
-      }
+      $sn->remove($location);
+      $sn->flush();
+
+      $response
+      ->setContent(json_encode([
+          'success' => true,
+          'code' => 200,
+          'message' => "Location was deleted successfully!"
+        ]));
+      $response->setStatusCode(200);
+      $response->headers->set('Content-Type', 'application/json');
+     
+      return $response;
+    
     }
 
 

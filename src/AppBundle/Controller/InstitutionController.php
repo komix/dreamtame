@@ -105,9 +105,41 @@ class InstitutionController extends FOSRestController
 
 
   /**
+   * @Rest\Post("/institutions/last-n")
+   */
+  public function getLastNInstances(Request $request)
+  {
+    $limit = $request->get('limit');
+
+    if (empty($limit)) {
+      $limit = 5;
+    }
+
+    $em = $this->getDoctrine()->getManager();
+    $qb = $em->createQueryBuilder();
+
+    $q = $qb->select(array('i'))
+         ->from('AppBundle:Institution', 'i')
+         ->where('i.imgUrl IS NOT NULL')
+         ->orderBy('i.id', 'DESC')
+         ->setMaxResults($limit)
+         ->getQuery();
+
+    $institutions = $q->getResult();
+
+    if (empty($institutions)) {
+      return array();
+    } else {
+      return $institutions;
+    }
+  }
+
+
+
+  /**
    * @Rest\Post("/institutions/last")
    */
-  public function getLastAction(Request $request)
+  public function getLastByIdsListAction(Request $request)
   {
     $limit = $request->get('limit');
     $idsList = $request->get('idsList');
@@ -302,16 +334,31 @@ class InstitutionController extends FOSRestController
   }
 
   /**
-  * @Rest\Delete("/categories/{id}")
+  * @Rest\Delete("/api/institutions/{id}")
   */
   public function deleteAction($id)
     {
-      $category = new Category;
+      $token = $this->get('security.token_storage')->getToken();
+      $user = $token->getUser();  
+
+      if (!$user->hasRole('ROLE_ADMIN')) {
+        $response = new Response();
+        $response->setContent(json_encode([
+            'error' => true,
+            'code' => 401,
+            'message' => "No permission."
+        ]));
+        $response->setStatusCode(401);
+        $response->headers->set('Content-Type', 'application/json');
+
+        return $response;
+      }
+
       $sn = $this->getDoctrine()->getManager();
-      $category = $this->getDoctrine()->getRepository('AppBundle:Category')->find($id);
+      $institution = $this->getDoctrine()->getRepository('AppBundle:Institution')->find($id);
       $response = new Response();
 
-      if (empty($category)) {
+      if (empty($institution)) {
         $response->setContent(json_encode([
             'error' => true,
             'code' => 404,
@@ -321,21 +368,22 @@ class InstitutionController extends FOSRestController
         $response->headers->set('Content-Type', 'application/json');
 
         return $response;
-      } else {
-        $sn->remove($category);
-        $sn->flush();
+      } 
 
-        $response
-        ->setContent(json_encode([
-            'success' => true,
-            'code' => 200,
-            'message' => "Category was deleted successfully!"
-          ]));
-        $response->setStatusCode(200);
-        $response->headers->set('Content-Type', 'application/json');
-       
-        return $response;
-      }
+      $sn->remove($institution);
+      $sn->flush();
+
+      $response
+      ->setContent(json_encode([
+          'success' => true,
+          'code' => 200,
+          'message' => "Category was deleted successfully!"
+        ]));
+      $response->setStatusCode(200);
+      $response->headers->set('Content-Type', 'application/json');
+     
+      return $response;
+      
     }
 
 

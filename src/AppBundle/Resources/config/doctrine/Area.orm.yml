@@ -1,0 +1,31 @@
+AppBundle\Entity\Area:
+    type: entity
+    table: null
+    repositoryClass: AppBundle\Repository\AreaRepository
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        name:
+            type: string
+            length: '200'
+        fromLat:
+            type: float
+        fromLng:
+            type: float
+        toLat:
+            type: float
+        toLng:
+            type: float
+    manyToOne:
+        location:
+            targetEntity: Location
+            inversedBy: areas
+            cascade: ["persist"]
+            joinColumn:
+                name: location_id
+                referencedColumnName: id
+    lifecycleCallbacks: {  }
