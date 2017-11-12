@@ -12,6 +12,7 @@ use FOS\RestBundle\View\View;
 use AppBundle\Entity\Institution;
 use AppBundle\Entity\User;
 use Symfony\Component\EventDispatcher\EventDispatcher;
+use AppBundle\Entity\Area;
 
 
 class InstitutionController extends FOSRestController
@@ -224,6 +225,25 @@ class InstitutionController extends FOSRestController
     if (!empty($lat) && !empty($lng)) {
       $institution->setLat($lat);
       $institution->setLng($lng);
+
+      $em = $this->getDoctrine()->getManager();
+      $qb = $em->createQueryBuilder();
+
+      $area = $qb->select(array('a'))
+       ->from('AppBundle:Area', 'a')
+       ->where(
+         $qb->expr()->lt('a.fromLat', $lat),
+         $qb->expr()->gt('a.toLat', $lat),
+         $qb->expr()->lt('a.fromLng', $lng),
+         $qb->expr()->gt('a.toLng', $lng)
+       )
+       ->setMaxResults(1)
+       ->getQuery()
+       ->getOneOrNullResult();
+
+       if (!empty($area)) {
+          $institution->setLocationId($area->getLocationId());
+       }
     }
 
     if (!empty($address)) {

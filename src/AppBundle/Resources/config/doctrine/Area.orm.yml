@@ -20,6 +20,8 @@ AppBundle\Entity\Area:
             type: float
         toLng:
             type: float
+        locationId:
+            type: integer
     manyToOne:
         location:
             targetEntity: Location

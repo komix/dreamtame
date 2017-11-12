@@ -20,16 +20,43 @@ class PhotoUploadController extends FOSRestController
     public function postAction(Request $request) {
 
         ini_set("memory_limit", "-1");
-        $postdata = $request->get('base64Image');
-        $data = base64_decode(explode(",", $postdata)[1]);
+        $base64Image = $request->get('base64Image');
+        $instance = $request->get('instance');
+        $instanceId = $request->get('instanceId');
+        $data = base64_decode(explode(",", $base64Image)[1]);
         $formImage = imagecreatefromstring($data);       
         $name = uniqid('image', true) . '.jpeg';
-        $directory = 'uploads/' . $name;
+
+
+        if (!file_exists('uploads/' . $instance)) {
+          mkdir('uploads/' . $instance, 0777, true);
+        }
+
+        if (!empty($instance) && !empty($instanceId)) {
+
+            if (!file_exists('uploads/' . $instance)) {
+              mkdir('uploads/' . $instance, 0777, true);
+            }
+
+            if (!file_exists('uploads/' . $instance . '/' . $instanceId)) {
+              mkdir('uploads/' . $instance . '/' . $instanceId, 0777, true);
+            }
+
+            $directory = 'uploads/' . $instance . '/' . $instanceId . '/' . $name;
+        } else {
+            $directory = 'uploads/' . $name;
+        }
 
         $image = imagejpeg($formImage, $directory);
+
         $baseurl = $request->getScheme() . '://' . $request->getHttpHost() . $request->getBasePath();
 
-        $imgUrl = $baseurl . '/uploads/' . $name;
+        if ($instance && $instanceId) {
+            $imgUrl = $baseurl . '/uploads/' . $instance . '/' . $instanceId . '/' . $name;
+
+        } else {
+            $imgUrl = $baseurl . '/uploads/' . $name;
+        }
 
         $size = getimagesize($directory);
     

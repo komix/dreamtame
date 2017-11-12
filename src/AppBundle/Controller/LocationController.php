@@ -16,7 +16,7 @@ class LocationController extends FOSRestController
 {
 
   /**
-  * @Rest\Get("/")
+  * @Rest\Get("/locations")
   */
   public function getAction()
   {
@@ -107,7 +107,7 @@ class LocationController extends FOSRestController
           'success' => true,
           'code' => 200,
           'message' => "Location was added successfully!",
-          'articleId' => $locaton->getId()
+          'articleId' => $location->getId()
         ]));
     $response->setStatusCode(200);
     $response->headers->set('Content-Type', 'application/json');

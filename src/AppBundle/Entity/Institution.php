@@ -492,4 +492,33 @@ class Institution
     {
         return $this->imgUrl;
     }
+    /**
+     * @var integer
+     */
+    private $locationId;
+
+
+    /**
+     * Set locationId
+     *
+     * @param integer $locationId
+     *
+     * @return Institution
+     */
+    public function setLocationId($locationId)
+    {
+        $this->locationId = $locationId;
+
+        return $this;
+    }
+
+    /**
+     * Get locationId
+     *
+     * @return integer
+     */
+    public function getLocationId()
+    {
+        return $this->locationId;
+    }
 }

@@ -96,7 +96,7 @@ class UserController extends FOSRestController
 
     $response = new Response();
 
-    if (!$userEmail || !$userPlainPassword) {
+    if (empty($userEmail) || empty($userPlainPassword)) {
       $response->setContent(json_encode([
           'error' => true,
           'code' => 400,
@@ -169,12 +169,11 @@ class UserController extends FOSRestController
     return $response;
   }
 
-  /**
+/**
  * @Rest\Post("/activate-user/{token}")
  */
-  public function activateUser(Request $request) 
+  public function activateUser($token, Request $request) 
   {
-    $token = $request->get('token');
 
     $response = new Response();
 
@@ -182,14 +181,14 @@ class UserController extends FOSRestController
       ->getRepository('AppBundle:EmailConfirmTokens')
       ->findBy(array('token' => $token));
 
-    if ($singleresult === null) {
+    if (empty($singleresult)) {
        $response->setContent(json_encode([
           'error' => true,
-          'code' => 500,
+          'code' => 404,
           'message' => "token expired or already used"
       ]));
 
-      $response->setStatusCode(500);
+      $response->setStatusCode(404);
       $response->headers->set('Content-Type', 'application/json');
      
       return $response;
@@ -215,11 +214,199 @@ class UserController extends FOSRestController
     $user->setEnabled(1);
 
     $em = $this->getDoctrine()->getManager();
+    $em->remove($singleresult[0]);
     $em->persist($user);
     $em->flush();
 
-    return $user;
+    $jwtManager = $this->container->get('lexik_jwt_authentication.jwt_manager');
+    $token = $jwtManager->create($user);
+
+    $userData  = new \stdClass;
+
+    $userData->id = $user->getId();
+    $userData->firstName = $user->getFirstName();
+    $userData->lastName = $user->getLastName();
+    $userData->photoId = $user->getPhotoId();
+    $userData->email = $user->getEmail();
+    $userData->smallPhotoUrl = $user->getSmallPhotoUrl();
+    $userData->roles = $user->getRoles();
+
+    $response->setContent(json_encode([
+        'success' => true,
+        'code' => 200,
+        'user' => $userData,
+        'token' => $token
+    ]));
+    $response->setStatusCode(200);
+    $response->headers->set('Content-Type', 'application/json');
+
+    return $response;
   }
+
+
+/**
+ * @Rest\Post("/forgot-password")
+ */
+  public function forgotPassword(Request $request) 
+  {
+    $response = new Response();
+    $email = $request->get('email');
+
+    if (empty($email)) {
+      $response->setContent(json_encode([
+          'error' => true,
+          'code' => 400,
+          'message' => "Bad Request"
+      ]));
+      $response->setStatusCode(400);
+      $response->headers->set('Content-Type', 'application/json');
+     
+      return $response;
+    }
+
+    $users = $this->getDoctrine()
+      ->getRepository('AppBundle:User')
+      ->findBy(array('email' => $email));
+
+    if (empty($users)) {
+       $response->setContent(json_encode([
+          'success' => true,
+          'code' => 200,
+          'message' => "Link for resetting password is sent."
+      ]));
+
+      $response->setStatusCode(200);
+      $response->headers->set('Content-Type', 'application/json');
+     
+      return $response;
+    }
+
+    $userId = $users[0]->getId();
+
+    $existingToken = $this->getDoctrine()
+                ->getRepository('AppBundle:EmailConfirmTokens')
+                ->findOneBy(array('userId' => $userId));
+
+    if (!empty($existingToken)) {
+      $sn = $this->getDoctrine()->getManager();
+      $sn->remove($existingToken);
+      $sn->flush();
+    }
+
+    $random = md5(uniqid($users[0]->getEmail(), true));
+    $confirmToken = new EmailConfirmTokens;
+    $confirmToken->setUserId($users[0]->getId());
+    $confirmToken->setToken($random);
+
+    $em = $this->getDoctrine()->getManager();
+    $em->persist($confirmToken);
+    $em->flush();
+
+
+    $message = \Swift_Message::newInstance()
+      ->setSubject('Email Confirmation')
+      ->setFrom('dreamtame@gmail.com')
+      ->setTo($users[0]->getEmail())
+      ->setBody(
+            $this->renderView(
+                'Emails/reset-password.html.twig',
+                array('token' => $confirmToken->getToken())
+              ),
+              'text/html'
+        );
+
+    $this->get('mailer')
+      ->send($message);
+
+    $response->setContent(json_encode([
+        'success' => true,
+        'code' => 200,
+        'message' => 'Link for resetting password is sent.'
+    ]));
+
+    $response->setStatusCode(200);
+    $response->headers->set('Content-Type', 'application/json');
+
+    return $response;
+  }
+
+
+/**
+ * @Rest\Post("/restore-password")
+ */
+  public function restorePassword(Request $request) 
+  {
+    $response = new Response();
+    $token = $request->get('token');
+    $password = $request->get('password');
+
+    if (empty($token) || empty($password)) {
+      $response->setContent(json_encode([
+          'error' => true,
+          'code' => 400,
+          'message' => "Bad Request"
+      ]));
+      $response->setStatusCode(400);
+      $response->headers->set('Content-Type', 'application/json');
+     
+      return $response;
+    }
+
+    $em = $this->getDoctrine()->getManager();
+
+    $restoreToken = $this->getDoctrine()
+      ->getRepository('AppBundle:EmailConfirmTokens')
+      ->findOneBy(array('token' => $token));
+
+    if (empty($restoreToken)) {
+      $response->setContent(json_encode([
+          'error' => true,
+          'code' => 404,
+          'message' => "token expired or already used"
+      ]));
+
+      $response->setStatusCode(404);
+      $response->headers->set('Content-Type', 'application/json');
+     
+      return $response;
+    }
+
+
+    $userManager = $this->container->get('fos_user.user_manager');
+    $user = $userManager->findUserBy(array('id' => $restoreToken->getUserId()));
+
+    if (empty($user)) {
+      $response->setContent(json_encode([
+          'error' => true,
+          'code' => 404,
+          'message' => "token expired or already used"
+      ]));
+
+      $response->setStatusCode(404);
+      $response->headers->set('Content-Type', 'application/json');
+     
+      return $response;
+    }
+
+    $user->setPlainPassword($password);
+    $userManager->updateUser($user);
+
+    $em->remove($restoreToken);
+    $em->flush();
+
+    $response->setContent(json_encode([
+        'success' => true,
+        'code' => 200,
+        'message' => 'Password was restored successfully.'
+    ]));
+
+    $response->setStatusCode(200);
+    $response->headers->set('Content-Type', 'application/json');
+
+    return $response;
+  }
+
+
 
   /**
  * @Rest\Put("/api/users/{id}")
@@ -263,9 +450,9 @@ class UserController extends FOSRestController
     $user->setLastName($lastName);
   }
 
-  if (!empty($email)) {
-    $user->setEmail($email);
-  }
+  // if (!empty($email)) {
+  //   $user->setEmail($email);
+  // }
 
   if (!empty($photoId)) {
     $user->setPhotoId($photoId);

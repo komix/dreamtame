@@ -1,6 +1,9 @@
 <?php
 
 namespace AppBundle\Entity;
+use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use AppBundle\Entity\Location;
 
 /**
  * Area
@@ -42,6 +45,11 @@ class Area
      * @ORM\JoinColumn(name="location_id", referencedColumnName="id")
      */
     private $location;
+
+    /**
+     * @var integer
+     */
+    private $locationId;
 
 
     /**
@@ -173,5 +181,52 @@ class Area
     {
         return $this->toLng;
     }
-}
 
+    /**
+     * Set locationId
+     *
+     * @param integer $locationId
+     *
+     * @return Area
+     */
+    public function setLocationId($locationId)
+    {
+        $this->locationId = $locationId;
+
+        return $this;
+    }
+
+    /**
+     * Get locationId
+     *
+     * @return integer
+     */
+    public function getLocationId()
+    {
+        return $this->locationId;
+    }
+
+    /**
+     * Set location
+     *
+     * @param \AppBundle\Entity\Location $location
+     *
+     * @return Area
+     */
+    public function setLocation(\AppBundle\Entity\Location $location = null)
+    {
+        $this->location = $location;
+
+        return $this;
+    }
+
+    /**
+     * Get location
+     *
+     * @return \AppBundle\Entity\Location
+     */
+    public function getLocation()
+    {
+        return $this->location;
+    }
+}

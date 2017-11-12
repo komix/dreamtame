@@ -44,6 +44,78 @@ class AreaController extends FOSRestController
     $fromLng = $request->get('fromLng');
     $toLat = $request->get('toLat');
     $toLng = $request->get('toLng');
+    $locationId = $request->get('locationId');
+    
+    $response = new Response();
+
+    if (empty($name) || empty($fromLat) || empty($fromLng) || empty($toLat) || empty($toLng) || empty($locationId)) {
+      $response
+        ->setContent(json_encode([
+          'error' => true,
+          'code' => 400,
+          'message' => "Bad Request"
+        ]));
+      $response->setStatusCode(400);
+      $response->headers->set('Content-Type', 'application/json');
+     
+      return $response;
+    }
+
+    $location = $this->getDoctrine()->getRepository('AppBundle:Location')->find($locationId);
+
+    $area->setName($name);
+    $area->setFromLat($fromLat);
+    $area->setFromLng($fromLng);
+    $area->setToLat($toLat);
+    $area->setToLng($toLng);
+    $area->setLocation($location);
+
+    $em = $this->getDoctrine()->getManager();
+    $em->persist($area);
+    $em->flush();
+
+    $response
+      ->setContent(json_encode([
+          'success' => true,
+          'code' => 200,
+          'message' => "Location was added successfully!",
+          'articleId' => $area->getId()
+        ]));
+    $response->setStatusCode(200);
+    $response->headers->set('Content-Type', 'application/json');
+
+    return $response;
+  }
+
+
+  /**
+   * @Rest\Put("/api/areas/{id}")
+   */
+  public function updateAction($id, Request $request) 
+  {
+    $token = $this->get('security.token_storage')->getToken();
+    $user = $token->getUser();
+    $ownerId = $user->getId();
+
+    if (!$user->hasRole('ROLE_ADMIN')) {
+      $response->setContent(json_encode([
+          'error' => true,
+          'code' => 401,
+          'message' => "No permission."
+      ]));
+      $response->setStatusCode(401);
+      $response->headers->set('Content-Type', 'application/json');
+
+      return $response;
+    }
+
+    $area = $this->getDoctrine()->getRepository('AppBundle:Area')->find($id);
+
+    $name = $request->get('name');
+    $fromLat = $request->get('fromLat');
+    $fromLng = $request->get('fromLng');
+    $toLat = $request->get('toLat');
+    $toLng = $request->get('toLng');
     
     $response = new Response();
 
@@ -67,7 +139,6 @@ class AreaController extends FOSRestController
     $area->setToLng($toLng);
 
     $em = $this->getDoctrine()->getManager();
-    $em->persist($area);
     $em->flush();
 
     $response
@@ -75,13 +146,14 @@ class AreaController extends FOSRestController
           'success' => true,
           'code' => 200,
           'message' => "Location was added successfully!",
-          'articleId' => $area->getId()
+          'areaId' => $area->getId()
         ]));
     $response->setStatusCode(200);
     $response->headers->set('Content-Type', 'application/json');
 
     return $response;
   }
+
 
   /**
   * @Rest\Delete("/api/areas/{id}")

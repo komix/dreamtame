@@ -46,6 +46,9 @@ AppBundle\Entity\Institution:
         recruitTo:
             type: integer
             nullable: true
+        locationId:
+            type: integer
+            nullable: true
     oneToMany:
         workingTime:
             targetEntity: WorkingHours
