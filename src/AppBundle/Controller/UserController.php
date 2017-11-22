@@ -144,7 +144,7 @@ class UserController extends FOSRestController
 
     $message = \Swift_Message::newInstance()
     ->setSubject('Email Confirmation')
-    ->setFrom('dreamtame@gmail.com')
+    ->setFrom('no-reply@dreamtame.com')
     ->setTo($user->getEmail())
     ->setBody(
           $this->renderView(
@@ -153,6 +153,12 @@ class UserController extends FOSRestController
             ),
             'text/html'
       );
+
+    $headers =& $message->getHeaders();
+    // $headers->addIdHeader('Message-ID', "b3eb7202-d2f1-11e4-b9d6-1681e6b88ec1@domain.com");
+    $headers->addTextHeader('MIME-Version', '1.0');
+    $headers->addTextHeader('X-Mailer', 'PHP v' . phpversion());
+    $headers->addParameterizedHeader('Content-type', 'text/html', ['charset' => 'utf-8']);
 
     $this->get('mailer')
       ->send($message);
@@ -305,7 +311,7 @@ class UserController extends FOSRestController
 
     $message = \Swift_Message::newInstance()
       ->setSubject('Email Confirmation')
-      ->setFrom('dreamtame@gmail.com')
+      ->setFrom('no-reply@dreamtame.com')
       ->setTo($users[0]->getEmail())
       ->setBody(
             $this->renderView(
@@ -314,6 +320,12 @@ class UserController extends FOSRestController
               ),
               'text/html'
         );
+
+    $headers =& $message->getHeaders();
+    // $headers->addIdHeader('Message-ID', "b3eb7202-d2f1-11e4-b9d6-1681e6b88ec1@domain.com");
+    $headers->addTextHeader('MIME-Version', '1.0');
+    $headers->addTextHeader('X-Mailer', 'PHP v' . phpversion());
+    $headers->addParameterizedHeader('Content-type', 'text/html', ['charset' => 'utf-8']);
 
     $this->get('mailer')
       ->send($message);
@@ -390,8 +402,10 @@ class UserController extends FOSRestController
 
     $user->setPlainPassword($password);
     $userManager->updateUser($user);
+    $user->setEnabled(1);
 
     $em->remove($restoreToken);
+    $em->persist($user);
     $em->flush();
 
     $response->setContent(json_encode([
